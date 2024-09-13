@@ -1,0 +1,557 @@
+<html>
+<head>
+    <meta charset="utf-8">
+	<meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+	<meta name="mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+    <title>SI IPALKU</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">	
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	<!-- Marker Cluster CSS Library -->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <style>
+        html, body, #map{
+            height: 100%;
+            width: 100%;
+            margin: 0px;
+		.info {
+		   padding: 6px 8px;
+		   font: 14px/16px Arial, Helvetica, sans-serif;
+		   background: white;
+		   background: rgba(255,255,255,0.8);
+		   box-shadow: 0 0 15px rgba(0,0,0,0.2);
+		   border-radius: 10px;
+		}
+		.info h2 {
+		   margin: 0 0 5px;
+		   color: #777;
+		}
+        }
+    </style>
+</head>
+<body>
+    <!-- Library Leaflet Javascript -->
+		<script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+	<!-- Library jquery -->
+		<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script> 
+	<!-- Library Bootstrap -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+		<!-- Marker Cluster JS Library -->
+	<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+        <!-- Bootstrap Modal Popup -->
+		<div class="modal fade" id="featureModal" tabindex="-1" role="dialog">
+            <div class="modal-dialog">
+               <div class="modal-content">
+                  <div class="modal-header">
+                     <button class="close" type="button" data-dismiss="modal" aria-hidden="true">×</button>
+                     <h4 class="modal-title text-primary" id="feature-title"></h4>
+                  </div>
+                  <div class="modal-body" id="feature-info"></div>
+                  <div class="modal-footer">
+                     <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+                  </div>
+               </div>
+            </div>
+         </div>
+
+         <div id="map"></div>
+        <script>
+         //Center map
+		   var map = L.map('map').setView([-6.8023667,110.8397141],12);   
+
+		   var basemap1 = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			maxZoom: 19,
+			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+			});
+			
+			var basemap2 = L.tileLayer('http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+			maxZoom: 20,
+			subdomains:['mt0','mt1','mt2','mt3'],
+			attribution: 'Google Streets'
+			}); 
+			
+			var basemap3 = L.tileLayer('http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+			maxZoom: 20,
+			subdomains:['mt0','mt1','mt2','mt3'],
+			attribution: 'Google Satellite'
+			}); 
+
+			var basemap4 = L.tileLayer('http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+			maxZoom: 20,
+			subdomains:['mt0','mt1','mt2','mt3'],
+			attribution: 'Google Hybrid'
+			}); 
+
+			var basemap5 = L.tileLayer('http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+			maxZoom: 20,
+			subdomains:['mt0','mt1','mt2','mt3'],
+			attribution: 'Google Terrain'
+			}); 
+
+			var basemap6 = L.tileLayer('https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', {
+	        maxZoom: 20,
+	        attribution: '<a href="https://github.com/cyclosm/cyclosm-cartocss-style/releases" title="CyclOSM - Open Bicycle render">CyclOSM</a> | Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            });
+
+            basemap5.addTo(map);
+
+            var markerClusters = new L.MarkerClusterGroup({
+ 			 spiderfyOnMaxZoom: true,
+ 			 showCoverageOnHover: true,
+ 			 zoomToBoundsOnClick: true,
+ 			 disableClusteringAtZoom: 15 //Disable cluster pada zoom 15
+			});
+
+			//LAYER POINT
+			var titikipal = L.geoJson(null, {
+			   pointToLayer: function (feature, latlng) {
+				  return L.marker(latlng, {
+					 icon: L.icon({
+						iconUrl: "Image/merah.png",
+						iconSize: [40, 40],
+						iconAnchor: [11, 22],
+						popupAnchor: [0, -25]
+					 })
+				  });
+			   },
+			   onEachFeature: function (feature, layer) {
+				   if (feature.properties) {
+				   
+					var content = "<table class='table table-striped table-bordered table-condensed'>" +
+					  "<tr><th>Kelurahan</th><td>" + feature.properties.Kelurahan + "</td></tr>" +
+					  "<tr><th>Dukuh</th><td>" + feature.properties.Dukuh + "</td></tr>" +
+					  "<tr><th>RT</th><td>" + feature.properties.RT + "</td></tr>" +
+					  "<tr><th>RW</th><td>" + feature.properties.RW + "</td></tr>" +
+					  "<tr><th>Kecamatan</th><td>" + feature.properties.Kecamatan + "</td></tr>" +
+					  "<tr><th>Tahun Dibangun</th><td>" + feature.properties.Thn_Dibang + "</td></tr>" +
+					  "<tr><th>Desain</th><td>" + feature.properties.Desain + "</td></tr>" +
+					  "<tr><th>Penerima Manfaat</th><td>" + feature.properties.SR + "</td></tr>" +
+					  "<tr><th>Kondisi</th><td>" + feature.properties.Kondisi + "</td></tr>" +
+					  "<tr><th>Permasalahan</th><td>" + feature.properties.Permasalah + "</td></tr>" +
+					  "<tr><th>Foto Kondisi Eksisting</th><td>" + "<img src='foto/" + feature.properties.Foto + "' width='300'>" + "</td></tr>" +
+					  "</table>"; 
+		 
+					  layer.on({
+						 click: function (e) {
+						  $("#feature-title").html(feature.properties.Kelurahan);
+						  $("#feature-info").html(content);
+						  $("#featureModal").modal("show");
+						 }
+					  });
+				   }
+				} 
+			});
+			$.getJSON("shp/titik ipal.geojson", function (data) {
+				titikipal.addData(data);
+			   map.addLayer(titikipal);
+			   markerClusters.addLayer(titikipal).addTo(map); //Menambahkan markerClusters ke dalam layer titik
+			}); 
+
+			//LAYER POLYGON
+			var dataadminColors ={"Desa_Kel":"#FFFFFF"};
+		
+			var dataadmin = L.geoJson(null, {
+			   style: function (feature) {
+				  return {
+					 fillColor: dataadminColors[feature.properties.Desa_Kel],
+					 fillOpacity: 0.5,
+					 color: "#DDA0DD",
+					 weight: 2,
+					 opacity: 1
+				  };
+			   },
+			   onEachFeature: function (feature, layer) {
+			   var content = "<table class='table table-striped table-bordered table-condensed'>" +
+				"<tr><th>Desa/Kelurahan</th><td>" + feature.properties.Desa_Kel + "</td></tr>" +
+				"<tr><th>Kecamatan</th><td>" + feature.properties.Kecamatan + "</td></tr>" +
+				"<tr><th>Luas (km2)</th><td>" + feature.properties.Luas__km2_ + "</td></tr>" +
+				"<tr><th>Kepadatan (Jiwa/km2)</th><td>" + feature.properties.Kpdt__jw_k + "</td></tr>" +
+				"<tr><th>Jumlah Penduduk</th><td>" + feature.properties.jml_pddk_2 + "</td></tr>" +
+				"<tr><th>Jumlah KK</th><td>" + feature.properties.jml_kk + "</td></tr>" +
+				"<tr><th>Jumlah Rumah</th><td>" + feature.properties.jml_rumah + "</td></tr>" +
+				"<tr><th>Rata-Rata Jiwa/KK (Jiwa/km2)</th><td>" + feature.properties.rt_jw_kk__ + "</td></tr>" +
+				"<tr><th>Rata-Rata Jiwa/Rumah</th><td>" + feature.properties.rt_jw_rmh + "</td></tr>" +
+				"<tr><th>Rata-Rata Jiwa/KK</th><td>" + feature.properties.rt_jw_kk_1 + "</td></tr>" +
+				"</table>";
+
+				layer.on({
+				  mouseover: function (e) {  //ketika mouse masuk ke layer atau polygon
+					 var layer = e.target;
+					 layer.setStyle({
+						weight: 2,
+						color: "White",
+						opacity: 1,
+						fillColor: "yellow",
+						fillOpacity: 1
+					 });
+			 
+				 
+				  },
+				  
+				  
+				  mouseout: function (e) { //ketika mouse keluar ke layer atau polygon
+					 dataadmin.resetStyle(e.target);
+					 map.closePopup();
+				  },
+
+				  click: function (e) {
+					  $("#feature-title").html("Data Administrasi " + feature.properties.Desa_Kel);
+					  $("#feature-info").html(content);
+					  $("#featureModal").modal("show");
+				   }
+			   });
+			} 
+			});
+			$.getJSON("shp/data administrasi.geojson", function (data) {
+			   dataadmin.addData(data);
+			   map.addLayer(dataadmin);
+	
+			});
+
+			var spaldtpermukimanColors ={"Desa_Kel":"#FFFFFF"};
+		
+			var spaldtpermukiman = L.geoJson(null, {
+			   style: function (feature) {
+				  return {
+					 fillColor: spaldtpermukimanColors[feature.properties.Desa_Kel],
+					 fillOpacity: 0.5,
+					 fillColor: "#F5FFFA",
+					 weight: 2,
+					 opacity: 1
+				  };
+			   },
+			   onEachFeature: function (feature, layer) {
+			   var content = "<table class='table table-striped table-bordered table-condensed'>" +
+				"<tr><th>Desa/Kelurahan</th><td>" + feature.properties.Desa_Kel + "</td></tr>" +
+				"<tr><th>Kecamatan</th><td>" + feature.properties.Kecamatan + "</td></tr>" +
+				"<tr><th>Penerima Manfaat (SR)</th><td>" + feature.properties.SR + "</td></tr>" +
+				"<tr><th>Jumlah Jiwa</th><td>" + feature.properties.Jiwa + "</td></tr>" +
+				"<tr><th>Persentase</th><td>" + feature.properties.Persen+ "</td></tr>" +
+				"<tr><th>Jenis Sanitasi</th><td>" + feature.properties.Jenis + "</td></tr>" +
+				"<tr><th>Sumber Pembiayaan</th><td>" + feature.properties.Sumber + "</td></tr>" +
+				"<tr><th>Tahun</th><td>" + feature.properties.Tahun + "</td></tr>" +
+				"</table>";
+
+				layer.on({
+				  mouseover: function (e) {  //ketika mouse masuk ke layer atau polygon
+					 var layer = e.target;
+					 layer.setStyle({
+						weight: 2,
+						color: "White",
+						opacity: 1,
+						fillColor: "yellow",
+						fillOpacity: 1
+					 });
+			 
+				 
+				  },
+				  
+				  
+				  mouseout: function (e) { //ketika mouse keluar ke layer atau polygon
+					 spaldtpermukiman.resetStyle(e.target);
+					 map.closePopup();
+				  },
+
+				  click: function (e) {
+					  $("#feature-title").html("SPALD-T Skala Permukiman (APBN) " + feature.properties.Desa_Kel);
+					  $("#feature-info").html(content);
+					  $("#featureModal").modal("show");
+				   }
+			   });
+			} 
+			});
+			$.getJSON("shp/spaldt permukiman apbn.geojson", function (data) {
+			   spaldtpermukiman.addData(data);
+			   map.addLayer(dataadmin);
+	
+			});
+
+			var spaldsindividualColors ={"Desa_Kel":"#FFFFFF"};
+		
+			var spaldsindividual = L.geoJson(null, {
+			   style: function (feature) {
+				  return {
+					 fillColor: spaldsindividualColors[feature.properties.Desa_Kel],
+					 fillOpacity: 0.5,
+					 fillColor: "#F8F8FF",
+					 weight: 2,
+					 opacity: 1
+				  };
+			   },
+			   onEachFeature: function (feature, layer) {
+			   var content = "<table class='table table-striped table-bordered table-condensed'>" +
+				"<tr><th>Desa/Kelurahan</th><td>" + feature.properties.Desa_Kel + "</td></tr>" +
+				"<tr><th>Kecamatan</th><td>" + feature.properties.Kecamatan + "</td></tr>" +
+				"<tr><th>Jumlah Unit</th><td>" + feature.properties.Unit + "</td></tr>" +
+				"<tr><th>Jumlah Jiwa</th><td>" + feature.properties.Jiwa + "</td></tr>" +
+				"<tr><th>Persentase</th><td>" + feature.properties.Persen+ "</td></tr>" +
+				"<tr><th>Jenis Sanitasi</th><td>" + feature.properties.Jenis + "</td></tr>" +
+				"<tr><th>Sumber Pembiayaan</th><td>" + feature.properties.Sumber + "</td></tr>" +
+				"<tr><th>Tahun</th><td>" + feature.properties.Tahun + "</td></tr>" +
+				"</table>";
+
+				layer.on({
+				  mouseover: function (e) {  //ketika mouse masuk ke layer atau polygon
+					 var layer = e.target;
+					 layer.setStyle({
+						weight: 2,
+						color: "White",
+						opacity: 1,
+						fillColor: "yellow",
+						fillOpacity: 1
+					 });
+			 
+				 
+				  },
+				  
+				  
+				  mouseout: function (e) { //ketika mouse keluar ke layer atau polygon
+					 spaldsindividual.resetStyle(e.target);
+					 map.closePopup();
+				  },
+
+				  click: function (e) {
+					  $("#feature-title").html("SPALD-S Skala Individual (APBN) " + feature.properties.Desa_Kel);
+					  $("#feature-info").html(content);
+					  $("#featureModal").modal("show");
+				   }
+			   });
+			} 
+			});
+			$.getJSON("shp/spalds individual apbn.geojson", function (data) {
+			   spaldsindividual.addData(data);
+			   map.addLayer(dataadmin);
+	
+			});
+
+			var spaldskomunalColors ={"Desa_Kel":"#FFFFFF"};
+		
+			var spaldskomunal = L.geoJson(null, {
+			   style: function (feature) {
+				  return {
+					 fillColor: spaldskomunalColors[feature.properties.Desa_Kel],
+					 fillOpacity: 0.5,
+					 fillColor: "#E6E6FA",
+					 weight: 2,
+					 opacity: 1
+				  };
+			   },
+			   onEachFeature: function (feature, layer) {
+			   var content = "<table class='table table-striped table-bordered table-condensed'>" +
+				"<tr><th>Desa/Kelurahan</th><td>" + feature.properties.Desa_Kel + "</td></tr>" +
+				"<tr><th>Kecamatan</th><td>" + feature.properties.Kecamatan + "</td></tr>" +
+				"<tr><th>Jumlah KK</th><td>" + feature.properties.KK + "</td></tr>" +
+				"<tr><th>Jumlah Jiwa</th><td>" + feature.properties.Jiwa + "</td></tr>" +
+				"<tr><th>Persentase</th><td>" + feature.properties.Persen+ "</td></tr>" +
+				"<tr><th>Jenis Sanitasi</th><td>" + feature.properties.Jenis + "</td></tr>" +
+				"<tr><th>Sumber Pembiayaan</th><td>" + feature.properties.Sumber + "</td></tr>" +
+				"<tr><th>Tahun</th><td>" + feature.properties.Tahun + "</td></tr>" +
+				"</table>";
+
+				layer.on({
+				  mouseover: function (e) {  //ketika mouse masuk ke layer atau polygon
+					 var layer = e.target;
+					 layer.setStyle({
+						weight: 2,
+						color: "White",
+						opacity: 1,
+						fillColor: "yellow",
+						fillOpacity: 1
+					 });
+			 
+				 
+				  },
+				  
+				  
+				  mouseout: function (e) { //ketika mouse keluar ke layer atau polygon
+					 spaldskomunal.resetStyle(e.target);
+					 map.closePopup();
+				  },
+
+				  click: function (e) {
+					  $("#feature-title").html("SPALD-S Skala Komunal (APBN) " + feature.properties.Desa_Kel);
+					  $("#feature-info").html(content);
+					  $("#featureModal").modal("show");
+				   }
+			   });
+			} 
+			});
+			$.getJSON("shp/spalds komunal apbn.geojson", function (data) {
+			   spaldskomunal.addData(data);
+			   map.addLayer(dataadmin);
+	
+			});
+
+			var spaldsindividualsmColors ={"Desa_Kel":"#FFFFFF"};
+		
+			var spaldsindividualsm = L.geoJson(null, {
+			   style: function (feature) {
+				  return {
+					 fillColor: spaldsindividualsmColors[feature.properties.Desa_Kel],
+					 fillOpacity: 0.5,
+					 fillColor: "#B0E0E6",
+					 weight: 2,
+					 opacity: 1
+				  };
+			   },
+			   onEachFeature: function (feature, layer) {
+			   var content = "<table class='table table-striped table-bordered table-condensed'>" +
+				"<tr><th>Desa/Kelurahan</th><td>" + feature.properties.Desa_Kel + "</td></tr>" +
+				"<tr><th>Kecamatan</th><td>" + feature.properties.Kecamatan + "</td></tr>" +
+				"<tr><th>Jumlah Unit</th><td>" + feature.properties.Unit + "</td></tr>" +
+				"<tr><th>Jumlah Jiwa</th><td>" + feature.properties.Jiwa + "</td></tr>" +
+				"<tr><th>Persentase</th><td>" + feature.properties.Persen+ "</td></tr>" +
+				"<tr><th>Jenis Sanitasi</th><td>" + feature.properties.Jenis + "</td></tr>" +
+				"<tr><th>Sumber Pembiayaan</th><td>" + feature.properties.Sumber + "</td></tr>" +
+				"<tr><th>Tahun</th><td>" + feature.properties.Tahun + "</td></tr>" +
+				"</table>";
+
+				layer.on({
+				  mouseover: function (e) {  //ketika mouse masuk ke layer atau polygon
+					 var layer = e.target;
+					 layer.setStyle({
+						weight: 2,
+						color: "White",
+						opacity: 1,
+						fillColor: "yellow",
+						fillOpacity: 1
+					 });
+			 
+				 
+				  },
+				  
+				  
+				  mouseout: function (e) { //ketika mouse keluar ke layer atau polygon
+					 spaldsindividualsm.resetStyle(e.target);
+					 map.closePopup();
+				  },
+
+				  click: function (e) {
+					  $("#feature-title").html("SPALD-S Skala Individual (Swadaya Masyarakat) " + feature.properties.Desa_Kel);
+					  $("#feature-info").html(content);
+					  $("#featureModal").modal("show");
+				   }
+			   });
+			} 
+			});
+			$.getJSON("shp/spalds individual sm.geojson", function (data) {
+			   spaldsindividualsm.addData(data);
+			   map.addLayer(dataadmin);
+	
+			});
+
+			var sanitasisaranaColors ={"Desa_Kel":"#FFFFFF"};
+		
+			var sanitasisarana = L.geoJson(null, {
+			   style: function (feature) {
+				  return {
+					 fillColor: sanitasisaranaColors[feature.properties.Desa_Kel],
+					 fillOpacity: 0.5,
+					 fillColor: "#40E0D0",
+					 weight: 2,
+					 opacity: 1
+				  };
+			   },
+			   onEachFeature: function (feature, layer) {
+			   var content = "<table class='table table-striped table-bordered table-condensed'>" +
+				"<tr><th>Desa/Kelurahan</th><td>" + feature.properties.Desa_Kel + "</td></tr>" +
+				"<tr><th>Kecamatan</th><td>" + feature.properties.Kecamatan + "</td></tr>" +
+				"<tr><th>Jenis Sanitasi</th><td>" + feature.properties.Jenis + "</td></tr>" +
+				"<tr><th>Jumlah KK</th><td>" + feature.properties.KK + "</td></tr>" +
+				"<tr><th>Jumlah Jiwa</th><td>" + feature.properties.Jiwa + "</td></tr>" +
+				"<tr><th>Persentase</th><td>" + feature.properties.Persen+ "</td></tr>" +
+				"<tr><th>Jenis Sanitasi</th><td>" + feature.properties.Jenis1 + "</td></tr>" +
+				"<tr><th>Jumlah KK</th><td>" + feature.properties.KK1 + "</td></tr>" +
+				"<tr><th>Jumlah Jiwa</th><td>" + feature.properties.Jiwa1 + "</td></tr>" +
+				"<tr><th>Persentase</th><td>" + feature.properties.Persen1+ "</td></tr>" +
+				"<tr><th>Jenis Sanitasi</th><td>" + feature.properties.Jenis2 + "</td></tr>" +
+				"<tr><th>Jumlah KK</th><td>" + feature.properties.KK2 + "</td></tr>" +
+				"<tr><th>Jumlah Jiwa</th><td>" + feature.properties.Jiwa2 + "</td></tr>" +
+				"<tr><th>Persentase</th><td>" + feature.properties.Persen2+ "</td></tr>" +
+				"<tr><th>Total Akses</th><td>" + feature.properties.Ttl_Akses + "</td></tr>" +
+				"</table>";
+
+				layer.on({
+				  mouseover: function (e) {  //ketika mouse masuk ke layer atau polygon
+					 var layer = e.target;
+					 layer.setStyle({
+						weight: 2,
+						color: "White",
+						opacity: 1,
+						fillColor: "yellow",
+						fillOpacity: 1
+					 });
+			 
+				 
+				  },
+				  
+				  
+				  mouseout: function (e) { //ketika mouse keluar ke layer atau polygon
+					 sanitasisarana.resetStyle(e.target);
+					 map.closePopup();
+				  },
+
+				  click: function (e) {
+					  $("#feature-title").html("Data Akses Sanitasi Berdasar Jumlah Sarana Tahun 2023 " + feature.properties.Desa_Kel);
+					  $("#feature-info").html(content);
+					  $("#featureModal").modal("show");
+				   }
+			   });
+			} 
+			});
+			$.getJSON("shp/sanitasi sarana.geojson", function (data) {
+			   sanitasisarana.addData(data);
+			   map.addLayer(dataadmin);
+	
+			});
+
+			//LOGOWATERMARK
+			
+			L.Control.Watermark = L.Control.extend({
+			   onAdd: function(map) {
+				  var img = L.DomUtil.create('img');
+				  img.src = 'Image/logo.jpg';
+				  img.style.width = '400px';
+				  return img;
+			   },
+			   onRemove: function(map) {
+				  // Nothing to do here
+			   }
+			});
+			L.control.watermark = function(opts) {
+			   return new L.Control.Watermark(opts);
+			}
+			L.control.watermark({ position: 'topright' }).addTo(map);
+						//MASUKAN JUDUL PETA--
+
+			 //Control Layer
+			 var baseMaps = {
+                    'Open Street Map' : basemap1,
+                    'google Streets' : basemap2,
+					'google Satellite' : basemap3,
+					'google Hybrid' : basemap4,
+					'google Terrain' : basemap5,
+					'google cyc1OSM' : basemap6
+                };
+
+				var layers = {
+                'titik ipal' :titikipal,
+				'data administrasi tahun 2022' :dataadmin,
+				'data akses sanitasi berdasar sumber pembiayaan (SPALD-T Skala Permukiman (APBN))' :spaldtpermukiman,
+				'data akses sanitasi berdasar sumber pembiayaan (SPALD-S Skala Individual (APBN))' :spaldsindividual,
+				'data akses sanitasi berdasar sumber pembiayaan (SPALD-S Skala Komunal (APBN))' :spaldskomunal,
+				'data akses sanitasi berdasar sumber pembiayaan (SPALD-S Skala Individual (Swadaya Masyarakat))' :spaldsindividualsm,
+				'data akses sanitasi berdasar jumlah sarana tahun 2023' :sanitasisarana
+
+                };
+				var layerControl = L.control.layers(baseMaps, layers, {collapsed:true});
+                layerControl.addTo(map);
+		</script>
+</body>
+</html>
